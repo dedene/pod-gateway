@@ -15,7 +15,7 @@ if [ ! -f /etc/resolv.conf.org ]; then
 fi
 
 #Get K8S DNS
-K8S_DNS=$(grep nameserver /etc/resolv.conf.org | cut -d' ' -f2)
+K8S_DNS=$(grep -m1 nameserver /etc/resolv.conf.org | cut -d' ' -f2)
 
 
 cat << EOF > /etc/dnsmasq.d/pod-gateway.conf
