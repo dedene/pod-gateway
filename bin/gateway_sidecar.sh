@@ -17,6 +17,14 @@ fi
 #Get K8S DNS
 K8S_DNS=$(grep nameserver /etc/resolv.conf.org | cut -d' ' -f2)
 
+DHCPv4_RANGE=""
+DHCPv6_RANGE=""
+if [ "$IPV4_ENABLED" == "true" ]; then
+  DHCPv4_RANGE="dhcp-range=${VXLAN_IP_NETWORK}.${VXLAN_GATEWAY_FIRST_DYNAMIC_IP},${VXLAN_IP_NETWORK}.255,12h"
+fi
+if [ "$IPV6_ENABLED" == "true" ]; then
+  DHCPv6_RANGE="${DHCP_RANGE}dhcp-range=::20,::200,constructor:vxlan0,slaac"
+fi
 
 cat << EOF > /etc/dnsmasq.d/pod-gateway.conf
 # DHCP server settings
@@ -27,8 +35,8 @@ enable-ra
 ra-param=vxlan0,3600,1800
 
 # Dynamic IPs assigned to PODs - we keep a range for static IPs
-dhcp-range=${VXLAN_IP_NETWORK}.${VXLAN_GATEWAY_FIRST_DYNAMIC_IP},${VXLAN_IP_NETWORK}.255,12h
-dhcp-range=::20,::200,constructor:vxlan0,slaac
+${DHCPv4_RANGE}
+${DHCPv6_RANGE}
 
 # For debugging purposes, log each DNS query as it passes through
 # dnsmasq.
