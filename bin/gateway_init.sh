@@ -55,12 +55,12 @@ ip6tables -t nat -A POSTROUTING -j MASQUERADE
 
 echo  "debug things"
 ls -al /config
-cat /config/nat6.conf
+# cat /config/nat6.conf
 cat /config/nat.conf
 
 if [[ -n "$VPN_INTERFACE" ]]; then
   # Process nat.conf and nat6.conf
-    for nat_file in "/config/nat.conf" "/config/nat6.conf"; do
+    for nat_file in "/config/nat.conf"; do
       # Open inbound NAT ports in nat.conf and nat6.conf
       while read -r line; do
         # Skip lines with comments

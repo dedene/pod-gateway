@@ -54,7 +54,7 @@ K8S_DNS_IP="$(cut -d ' ' -f 1 <<< "$K8S_DNS_IPS")"
 GATEWAY_IP="$(dig +short "$GATEWAY_NAME" "@${K8S_DNS_IP}")"
 STRIPPED_HOSTNAME="$(hostname | cut -d '-' -f 1)"
 NAT_ENTRY="$(grep $STRIPPED_HOSTNAME /config/nat.conf || true)"
-NAT6_ENTRY="$(grep $STRIPPED_HOSTNAME /config/nat6.conf || true)"
+NAT6_ENTRY="$(grep $STRIPPED_HOSTNAME /config/nat.conf || true)"
 VXLAN_GATEWAY_IP="${VXLAN_IP_NETWORK}.1"
 VXLAN_GATEWAY_IPv6="${VXLAN_IPv6_NETWORK}::1"
 
@@ -131,5 +131,6 @@ ip -6 route
 
 # Check we can connect to the gateway ussing the vxlan device
 ping -c "${CONNECTION_RETRY_COUNT}" "$VXLAN_GATEWAY_IP"
+ping6 -c "${CONNECTION_RETRY_COUNT}" "$VXLAN_GATEWAY_IPv6"
 
 echo "Gateway ready and reachable"
