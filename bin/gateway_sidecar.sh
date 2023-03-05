@@ -32,7 +32,7 @@ interface=vxlan0
 bind-interfaces
 
 enable-ra
-ra-param=vxlan0,3600,1800
+ra-param=vxlan0,5,120
 
 # Dynamic IPs assigned to PODs - we keep a range for static IPs
 ${DHCPv4_RANGE}
@@ -40,7 +40,7 @@ ${DHCPv6_RANGE}
 
 # For debugging purposes, log each DNS query as it passes through
 # dnsmasq.
-log-queries
+log-queries 
 
 # Log lots of extra information about DHCP transactions.
 log-dhcp

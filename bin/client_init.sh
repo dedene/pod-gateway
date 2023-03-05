@@ -76,8 +76,11 @@ function configureIPV6 {
     ip -6 addr
     ip -6 route
     
-    ip -6 r del default || /bin/true
-
+    echo "Dropping non-link local default route"
+    if ip -6 route | grep default | grep -v "fe80"; then
+      ip -6 r del default || /bin/true
+    fi
+    
     if ping -6 -c 1 -W 1 2001:4860:4860::8888; then
       echo "WE SHOULD NOT BE ABLE TO PING OVER IPV6 -> EXIT"
       exit 255
@@ -104,7 +107,6 @@ function configureIPV6 {
         ip route add "$K8S_GW_IPV6" via "$K8S_GW_IPV6"
     fi
 
-
     # Create tunnel NIC via IPV6 when IPV4 is disabled
     if [ "$IPV4_ENABLED" == "false" ]; then
       ip link add vxlan0 type vxlan id "$VXLAN_ID" dev eth0 dstport 0 || true
@@ -112,16 +114,11 @@ function configureIPV6 {
       ip link set up dev vxlan0
     fi
 
-    if [[ -z "$NAT6_ENTRY" ]]; then
-      echo "Trying to get dynamic IPV6 address"
-      dhclient -v -6 vxlan0
-      # ip -6 route add default via "$VXLAN_GATEWAY_IPV6"
-    else
+    if [[ ! -z "$NAT6_ENTRY" ]]; then
       IP=$(cut -d' ' -f2 <<< "$NAT6_ENTRY")
       VXLAN_IPV6="${VXLAN_IPV6_NETWORK}::${IP}"
       echo "Use fixed IPV6 $VXLAN_IPV6"
       ip -6 addr add "${VXLAN_IPV6}/64" dev vxlan0
-      ip -6 route add default via "$VXLAN_GATEWAY_IPV6"
     fi
 
     # For debugging reasons print some info

@@ -60,5 +60,5 @@ while true; do
   echo "Reconnecting to ${GATEWAY_NAME}"
 
   # reconnect
-  client_init.sh
+  # client_init.sh
 done
