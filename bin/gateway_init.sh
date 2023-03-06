@@ -37,6 +37,7 @@ if [ "$IPV4_ENABLED" == "true" ]; then
   # Create VXLAN NIC
   ip link add vxlan0 type vxlan id $VXLAN_ID dev eth0 dstport 0 || true
   ip addr add ${VXLAN_GATEWAY_IP}/24 dev vxlan0 || true
+  ip link set up dev vxlan0 || true
 
   # check if rule already exists (retry)
   if ! ip rule | grep -q "from all lookup main suppress_prefixlength 0"; then
@@ -56,8 +57,9 @@ if [ "$IPV6_ENABLED" == "true" ]; then
   fi
 
   # Create IPV6 VXLAN NIC
-  ip addr add ${VXLAN_GATEWAY_IPV6}/64 dev vxlan0 || true
-  ip link set up dev vxlan0
+  ip -6 link add vxlan0 type vxlan id $VXLAN_ID dev eth0 dstport 0 || true
+  ip -6 addr add ${VXLAN_GATEWAY_IPV6}/64 dev vxlan0 || true
+  ip -6 link set up dev vxlan0 || true
 
   # Check if rule already exists (retry, IPV6)
   if ! ip -6 rule | grep -q "from all lookup main suppress_prefixlength 0"; then
@@ -65,7 +67,7 @@ if [ "$IPV6_ENABLED" == "true" ]; then
   fi
 
   # Enable outbound NAT
-  ip6tables -t nat -A POSTROUTING -j MASQUERADE
+  # ip6tables -t nat -A POSTROUTING -j MASQUERADE
 fi
 
 echo  "debug things"
@@ -146,6 +148,9 @@ if [[ -n "$VPN_INTERFACE" ]]; then
   fi
   
   if [ "$IPV6_ENABLED" == "true" ]; then
+    ip6tables -A INPUT -p tcp -m tcp -m multiport -i "$VPN_INTERFACE" -j ACCEPT --dports 546,547
+    ip6tables -A INPUT -p udp -m udp -m multiport -i "$VPN_INTERFACE" -j ACCEPT --dports 546,547
+    
     ip6tables -A FORWARD -i "$VPN_INTERFACE" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     # Required by IPV6 spec
     ip6tables -A FORWARD -p ipv6-icmp -j ACCEPT
@@ -176,9 +181,9 @@ if [[ -n "$VPN_INTERFACE" ]]; then
     fi
 
     if [ "$IPV6_ENABLED" == "true" ]; then
-      ip6tables --policy FORWARD DROP
+      # ip6tables --policy FORWARD DROP
       ip6tables -I FORWARD -o "$VPN_INTERFACE" -j ACCEPT
-      ip6tables --policy OUTPUT DROP
+      # ip6tables --policy OUTPUT DROP
 
       ip6tables -A OUTPUT -p udp --dport "$VPN_TRAFFIC_PORT" -j ACCEPT #VPN traffic over UDP
       ip6tables -A OUTPUT -p tcp --dport "$VPN_TRAFFIC_PORT" -j ACCEPT #VPN traffic over TCP
@@ -189,6 +194,12 @@ if [[ -n "$VPN_INTERFACE" ]]; then
 
       ip6tables -A OUTPUT -o "$VPN_INTERFACE" -j ACCEPT
       ip6tables -A OUTPUT -o vxlan0 -j ACCEPT
+
+      # ip6tables -N LOGGING
+      # ip6tables -A FORWARD -j LOGGING
+      # ip6tables -A OUTPUT -j LOGGING
+      # ip6tables -A LOGGING -m limit --limit 2/min -j LOG --log-prefix "IPTables-Dropped: " --log-level 4
+      # ip6tables -A LOGGING -j DROP
     fi
   fi
 

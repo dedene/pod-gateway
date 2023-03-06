@@ -59,6 +59,9 @@ while true; do
   echo
   echo "Reconnecting to ${GATEWAY_NAME}"
 
+  sleep 1 &
+  wait $!
+
   # reconnect
   # client_init.sh
 done
